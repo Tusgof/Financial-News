@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financial News · สรุปสัญญาณข่าวรายวัน</title>
+  <meta name="description" content="สรุปสัญญาณข่าวธุรกิจ การเงิน เศรษฐกิจ นโยบาย และภูมิรัฐศาสตร์รายวัน คัดกรองด้วย AI" />
+  <link rel="canonical" href="https://tusgof.github.io/Financial-News/" />
+
+  <!-- Theme color adapts to light/dark UI -->
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+
+  <!-- Open Graph (LINE / Facebook / etc.) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Financial News" />
+  <meta property="og:locale" content="th_TH" />
+  <meta property="og:url" content="https://tusgof.github.io/Financial-News/" />
+  <meta property="og:title" content="Financial News · สรุปสัญญาณข่าวรายวัน" />
+  <meta property="og:description" content="สรุปสัญญาณข่าวธุรกิจ การเงิน เศรษฐกิจ นโยบาย และภูมิรัฐศาสตร์รายวัน คัดกรองด้วย AI" />
+
+  <!-- Twitter / X card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Financial News · สรุปสัญญาณข่าวรายวัน" />
+  <meta name="twitter:description" content="สรุปสัญญาณข่าวธุรกิจ การเงิน เศรษฐกิจ นโยบาย และภูมิรัฐศาสตร์รายวัน คัดกรองด้วย AI" />
+
+  <!-- Fonts: SF Pro feel via system stack + Thai Sarabun-like via Noto Sans Thai -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+</head>
+<body>
+  <!-- ===== Top Navigation (frosted glass) ===== -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a class="nav__brand" href="#top">
+        <span class="nav__logo">📈</span>
+        <span class="nav__title">Financial<span class="nav__title-accent">News</span></span>
+      </a>
+
+      <nav class="nav__links" id="navLinks">
+        <a href="#business" data-cat="business">ธุรกิจ / การเงิน</a>
+        <a href="#economy" data-cat="economy">เศรษฐกิจ / นโยบาย</a>
+        <a href="#politics" data-cat="politics">การเมือง / โลก</a>
+      </nav>
+
+      <div class="nav__actions">
+        <select class="date-select" id="dateSelect" aria-label="เลือกวันที่"></select>
+        <button class="theme-toggle" id="themeToggle" aria-label="สลับโหมดสี" title="สลับโหมดสี">
+          <span class="theme-toggle__icon">☾</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero" id="top">
+    <div class="hero__inner">
+      <p class="hero__eyebrow" id="heroEyebrow">VIRAL INTELLIGENCE NEWS SYSTEM</p>
+      <h1 class="hero__title">สรุปสัญญาณข่าว<br />ที่สำคัญจริง และมาแรง</h1>
+      <p class="hero__subtitle">คัดกรองข่าวธุรกิจ การเงิน เศรษฐกิจ นโยบาย และภูมิรัฐศาสตร์ ทุกเช้า — เฉพาะข่าวที่มีทั้งน้ำหนักและแรงส่ง</p>
+      <div class="hero__meta">
+        <span class="hero__date" id="heroDate">—</span>
+        <span class="hero__dot">·</span>
+        <span class="hero__count" id="heroCount">กำลังโหลด…</span>
+      </div>
+    </div>
+    <div class="hero__glow" aria-hidden="true"></div>
+  </section>
+
+  <!-- ===== Category Tabs ===== -->
+  <div class="tabs" id="tabs">
+    <div class="tabs__inner">
+      <button class="tab is-active" data-tab="business">
+        <span class="tab__emoji">💸</span>
+        <span class="tab__label">ธุรกิจ / การเงิน / ตลาด</span>
+      </button>
+      <button class="tab" data-tab="economy">
+        <span class="tab__emoji">🏦</span>
+        <span class="tab__label">เศรษฐกิจ / นโยบาย</span>
+      </button>
+      <button class="tab" data-tab="politics">
+        <span class="tab__emoji">🌍</span>
+        <span class="tab__label">การเมือง / ภูมิรัฐศาสตร์</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== Main Content ===== -->
+  <main class="main">
+    <article class="panel is-active" id="business" data-panel="business"></article>
+    <article class="panel" id="economy" data-panel="economy"></article>
+    <article class="panel" id="politics" data-panel="politics"></article>
+
+    <!-- Loading / empty states injected by JS -->
+    <div class="state" id="state" hidden></div>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <p class="footer__brand">📈 Financial<span class="nav__title-accent">News</span></p>
+      <p class="footer__note">สร้างอัตโนมัติทุกเช้าด้วย Claude routines · เนื้อหาเพื่อการรับรู้ข่าวสาร ไม่ใช่คำแนะนำการลงทุน</p>
+      <p class="footer__copy">© <span id="year"></span> Financial News</p>
+    </div>
+  </footer>
+
+  <!-- Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
