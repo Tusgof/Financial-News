@@ -121,30 +121,152 @@
 
   /* ---------- Markdown enhancement ---------- */
 
-  // After marked renders, walk blockquotes to upgrade
-  // confidence ("ความเชื่อมั่น") and source ("ที่มา") lines.
+  // After marked renders, group each item (h3 + Thai headline + blockquote)
+  // into a clean news card. This strips the "พาดหัวไทย:" label, gives every
+  // item a number badge + English kicker + bold Thai headline, and breaks the
+  // dense analysis blockquote into analysis / "why it matters" / meta sections.
   function enhanceMarkdown(container) {
-    container.querySelectorAll('blockquote').forEach((bq) => {
-      bq.querySelectorAll('p, li').forEach((node) => {
-        const strong = node.querySelector('strong');
-        if (!strong) return;
-        const label = strong.textContent.replace(/[:：]/g, '').trim();
+    const nodes = Array.from(container.children);
+    const frag = document.createDocumentFragment();
 
-        if (label.includes('ความเชื่อมั่น')) {
-          const raw = node.textContent.replace(strong.textContent, '').replace(/[:：]/g, '').trim();
-          const level = classifyConfidence(raw);
-          node.classList.add('conf-line');
-          node.innerHTML = `${strong.outerHTML} <span class="conf-pill is-${level}">${raw || '—'}</span>`;
-        } else if (label.includes('ที่มา')) {
-          node.classList.add('source-line');
-          node.querySelectorAll('a').forEach((a) => {
-            a.classList.add('source-chip');
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-          });
-        }
+    let i = 0;
+    while (i < nodes.length) {
+      const node = nodes[i];
+
+      if (node.tagName !== 'H3') {
+        // Region headings (h2), title (h1), separators — keep as-is.
+        frag.appendChild(node);
+        i++;
+        continue;
+      }
+
+      const card = document.createElement('article');
+      card.className = 'news-card';
+
+      // English headline like "1) Wall Street Closes..." → number + kicker.
+      const rawEn = node.textContent.trim();
+      const m = rawEn.match(/^(\d+)\)\s*(.*)$/);
+      const num = m ? m[1] : '';
+      const kicker = m ? m[2] : rawEn;
+
+      if (num) {
+        const badge = document.createElement('div');
+        badge.className = 'news-card__num';
+        badge.textContent = num;
+        card.appendChild(badge);
+      }
+
+      const main = document.createElement('div');
+      main.className = 'news-card__main';
+
+      if (kicker) {
+        const k = document.createElement('p');
+        k.className = 'news-card__kicker';
+        k.textContent = kicker;
+        main.appendChild(k);
+      }
+
+      let j = i + 1;
+
+      // Next paragraph is the Thai headline — drop the "พาดหัวไทย:" label.
+      if (j < nodes.length && nodes[j].tagName === 'P') {
+        const p = nodes[j];
+        let headline = p.innerHTML
+          .replace(/^\s*<strong>[\s\S]*?<\/strong>/i, '')
+          .replace(/^[\s:：]+/, '')
+          .trim();
+        const tmp = document.createElement('div');
+        tmp.innerHTML = headline;
+        const h = document.createElement('h3');
+        h.className = 'news-card__headline';
+        h.textContent = tmp.textContent.trim();
+        main.appendChild(h);
+        j++;
+      }
+
+      // Following blockquote holds analysis / why / confidence / source.
+      if (j < nodes.length && nodes[j].tagName === 'BLOCKQUOTE') {
+        main.appendChild(transformBody(nodes[j]));
+        j++;
+      }
+
+      card.appendChild(main);
+      frag.appendChild(card);
+      i = j;
+    }
+
+    container.innerHTML = '';
+    container.appendChild(frag);
+  }
+
+  // Turn a rendered analysis blockquote into structured card sections.
+  function transformBody(bq) {
+    const wrap = document.createElement('div');
+    wrap.className = 'news-card__body';
+
+    // marked (breaks:true) collapses the 4 ">" lines into one <p> joined by
+    // <br>, so flatten every p/li and split on <br> to recover each line.
+    const lines = [];
+    bq.querySelectorAll('p, li').forEach((node) => {
+      node.innerHTML.split(/<br\s*\/?>/i).forEach((seg) => {
+        const t = seg.trim();
+        if (t) lines.push(t);
       });
     });
+
+    const meta = document.createElement('div');
+    meta.className = 'news-card__meta';
+
+    lines.forEach((lineHtml) => {
+      const labelMatch = lineHtml.match(/^\s*<strong>([\s\S]*?)<\/strong>/i);
+      const label = labelMatch ? labelMatch[1].replace(/[:：]/g, '').trim() : '';
+      const valueHtml = lineHtml
+        .replace(/^\s*<strong>[\s\S]*?<\/strong>/i, '')
+        .replace(/^[\s:：]+/, '')
+        .trim();
+      const tmp = document.createElement('div');
+      tmp.innerHTML = valueHtml;
+      const valueText = tmp.textContent.trim();
+
+      if (label.includes('บทวิเคราะห์')) {
+        const p = document.createElement('p');
+        p.className = 'news-card__analysis';
+        p.innerHTML = valueHtml;
+        wrap.appendChild(p);
+      } else if (label.includes('สนใจ') || label.includes('ทำไม')) {
+        const why = document.createElement('div');
+        why.className = 'news-card__why';
+        const lbl = document.createElement('span');
+        lbl.className = 'news-card__why-label';
+        lbl.textContent = 'น่าสนใจเพราะ';
+        const txt = document.createElement('span');
+        txt.className = 'news-card__why-text';
+        txt.innerHTML = valueHtml;
+        why.append(lbl, txt);
+        wrap.appendChild(why);
+      } else if (label.includes('ความเชื่อมั่น')) {
+        const level = classifyConfidence(valueText);
+        const pill = document.createElement('span');
+        pill.className = `conf-pill is-${level}`;
+        pill.textContent = `เชื่อมั่น${valueText || '—'}`;
+        meta.appendChild(pill);
+      } else if (label.includes('ที่มา')) {
+        tmp.querySelectorAll('a').forEach((a) => {
+          a.classList.add('source-chip');
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          meta.appendChild(a);
+        });
+      } else if (label) {
+        const p = document.createElement('p');
+        p.className = 'news-card__analysis';
+        p.innerHTML = lineHtml;
+        wrap.appendChild(p);
+      }
+    });
+
+    if (meta.children.length) wrap.appendChild(meta);
+    return wrap;
   }
 
   function classifyConfidence(text) {
