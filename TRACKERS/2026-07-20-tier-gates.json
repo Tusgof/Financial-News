@@ -1,0 +1,30 @@
+{
+  "order": "WORK_ORDERS/2026-07-20-tier-gates.md",
+  "target_date": "2026-07-27",
+  "owner": "company owner",
+  "tasks": [
+    {
+      "id": "NEWS-TG-0",
+      "status": "done",
+      "required_artifacts": [
+        {"path": "scripts/validate-work-order.mjs", "must": "exist"},
+        {"path": "scripts/validate-work-order.test.mjs", "must": "exist"}
+      ],
+      "user_actions_pending": [],
+      "evidence": ["Validator negative test passed"],
+      "updated": "2026-07-20"
+    },
+    {
+      "id": "NEWS-TG-1",
+      "status": "not_started",
+      "required_artifacts": [
+        {"path": "PROJECT_BRAIN.md", "must": "exist"},
+        {"path": "AGENTS.md", "must": "exist"},
+        {"path": ".github/workflows/verify.yml", "must": "exist"}
+      ],
+      "user_actions_pending": [],
+      "evidence": [],
+      "updated": "2026-07-20"
+    }
+  ]
+}
