@@ -16,7 +16,7 @@
     },
     {
       "id": "NEWS-TG-1",
-      "status": "in_progress",
+      "status": "done",
       "required_artifacts": [
         {"path": "PROJECT_BRAIN.md", "must": "exist"},
         {"path": "AGENTS.md", "must": "exist"},
@@ -25,7 +25,10 @@
       "user_actions_pending": [],
       "evidence": [
         "Local npm test passed",
-        "Local npm run verify passed with 132 tracked files and 39 reachable commits"
+        "Local npm run verify passed with 135 tracked files and 41 reachable commits",
+        "Clean clone verification passed at 3d0f360974f3ed351a174b97d81e926df6a7e44f",
+        "GitHub Actions verify run 29846108510 passed at 3d0f360974f3ed351a174b97d81e926df6a7e44f",
+        "Independent root review findings closed: verbatim UTF-8 stop-rule assertion, default-deny tracked/history binary scan, and reachable-history portability scan"
       ],
       "updated": "2026-07-21"
     }

@@ -11,6 +11,16 @@ const trackedFiles = execFileSync("git", ["ls-files", "-z"], { cwd: root, encodi
   .split("\0")
   .filter(Boolean);
 
+const lockedStopRule = "หยุดทันทีเมื่อพบความคลาดเคลื่อนด้านเงิน การเปิดเผย PII/credential หรือการกระทำเกินอำนาจ; หาก acceptance gate เดิมล้มเหลวติดต่อกัน 3 ครั้งให้ pause และทบทวน; หากไม่เกิดผลดีที่วัดได้ติดต่อกัน 2 milestone ให้ kill หรือ re-scope";
+for (const controlDoc of ["AGENTS.md", "PROJECT_BRAIN.md"]) {
+  const absolute = path.join(root, controlDoc);
+  if (!fs.existsSync(absolute)) {
+    addFinding(controlDoc, "missing required control document");
+  } else if (!fs.readFileSync(absolute, "utf8").includes(lockedStopRule)) {
+    addFinding(controlDoc, "locked ORG Decision #9 stop rule is missing or not verbatim UTF-8");
+  }
+}
+
 const manifestPath = path.join(root, "news", "manifest.json");
 if (!fs.existsSync(manifestPath)) {
   addFinding("news/manifest.json", "missing manifest");
@@ -128,7 +138,10 @@ for (const file of trackedFiles) {
   const absolute = path.join(root, file);
   if (!fs.existsSync(absolute)) continue;
   const buffer = fs.readFileSync(absolute);
-  if (buffer.subarray(0, 8192).includes(0)) continue;
+  if (buffer.includes(0)) {
+    addFinding(file, "tracked binary content is not allowed in this public text-only repository");
+    continue;
+  }
   const text = buffer.toString("utf8");
   if (machinePath.test(text)) addFinding(file, "machine-specific absolute path");
   if (highConfidenceSecrets.some((pattern) => pattern.test(text))) {
@@ -143,38 +156,55 @@ for (const file of trackedFiles) {
 const commits = execFileSync("git", ["rev-list", "--all"], { cwd: root, encoding: "utf8" })
   .split(/\r?\n/)
   .filter(Boolean);
-const historyChecks = [
-  {
-    name: "reachable-history secret signature",
-    pattern: "-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|gh[pousr]_[A-Za-z0-9_]{30,}|xox[baprs]-[A-Za-z0-9-]{20,}|(^|[[:space:]\"'=])sk-(proj-)?[A-Za-z0-9_-]{32,}",
-  },
-  {
-    name: "reachable-history email/PII candidate",
-    pattern: "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
-  },
-];
-
-for (const commit of commits) {
-  for (const check of historyChecks) {
-    const result = spawnSync("git", ["grep", "-I", "-l", "-E", "-e", check.pattern, commit, "--"], {
-      cwd: root,
-      encoding: "utf8",
-    });
-    if (result.status === 0) addFinding(`history@${commit.slice(0, 7)}`, check.name);
-    else if (result.status !== 1) throw new Error(result.stderr || `git grep failed for ${commit}`);
-  }
-}
-
 const historyObjects = execFileSync("git", ["rev-list", "--objects", "--all"], { cwd: root, encoding: "utf8" })
   .split(/\r?\n/)
   .filter(Boolean);
+const objectRequests = historyObjects.map((entry) => entry.split(" ", 1)[0]).join("\n") + "\n";
+const batch = spawnSync("git", ["cat-file", "--batch"], {
+  cwd: root,
+  input: objectRequests,
+  encoding: null,
+  maxBuffer: 128 * 1024 * 1024,
+});
+if (batch.status !== 0) throw new Error(batch.stderr.toString("utf8") || "git cat-file --batch failed");
+
+let batchOffset = 0;
 for (const entry of historyObjects) {
   const separator = entry.indexOf(" ");
-  if (separator < 0) continue;
-  const objectPath = entry.slice(separator + 1).replaceAll("\\", "/");
-  if (sensitiveFilename.test(objectPath)) addFinding(objectPath, "reachable-history Vault-class filename candidate");
-  if (credentialFilename.test(objectPath) && !credentialExample.test(objectPath)) {
+  const objectPath = separator < 0 ? "" : entry.slice(separator + 1).replaceAll("\\", "/");
+  if (objectPath && sensitiveFilename.test(objectPath)) {
+    addFinding(objectPath, "reachable-history Vault-class filename candidate");
+  }
+  if (objectPath && credentialFilename.test(objectPath) && !credentialExample.test(objectPath)) {
     addFinding(objectPath, "reachable-history credential filename candidate");
+  }
+
+  const headerEnd = batch.stdout.indexOf(10, batchOffset);
+  if (headerEnd < 0) throw new Error("unexpected git cat-file batch output");
+  const [objectHash, objectType, objectSizeText] = batch.stdout.subarray(batchOffset, headerEnd).toString("utf8").split(" ");
+  const objectSize = Number(objectSizeText);
+  if (!objectHash || !objectType || !Number.isSafeInteger(objectSize)) {
+    throw new Error("invalid git cat-file batch header");
+  }
+  const contentStart = headerEnd + 1;
+  const contentEnd = contentStart + objectSize;
+  const content = batch.stdout.subarray(contentStart, contentEnd);
+  batchOffset = contentEnd + 1;
+
+  if (objectType !== "blob") continue;
+  const label = objectPath || `blob@${objectHash.slice(0, 7)}`;
+  if (content.includes(0)) {
+    addFinding(label, "reachable-history binary content in text-only public repository");
+    continue;
+  }
+  const historyText = content.toString("utf8");
+  if (machinePath.test(historyText)) addFinding(label, "reachable-history machine-specific absolute path");
+  if (highConfidenceSecrets.some((pattern) => pattern.test(historyText))) {
+    addFinding(label, "reachable-history high-confidence secret signature");
+  }
+  const historyEmails = historyText.match(email) ?? [];
+  if (historyEmails.some((value) => !/@(?:example\.(?:com|org|net)|example\.invalid)$/i.test(value))) {
+    addFinding(label, "reachable-history email/PII candidate");
   }
 }
 

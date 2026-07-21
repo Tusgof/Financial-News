@@ -70,8 +70,8 @@
 
 - **Last Verified**: 2026-07-21 by the NEWS-TG-1 author through the repository verifier, negative tests, and active tracker.
 - **Current Milestone**: NEWS-TG-1 T2 controls and CI installation.
-- **Published State**: The manifest contains 35 dated batches and each batch has three category files; this is derived and checked by `scripts/verify-repository.mjs`.
-- **Latest Manifest Date**: `2026-07-19`, derived from `news/manifest.json`.
+- **Published State**: Every manifest date currently maps to all three category files; this is derived and checked by `scripts/verify-repository.mjs` rather than maintained as a hand-written count.
+- **Latest Manifest Date**: The first entry of `news/manifest.json` is authoritative and is validated as the newest date by `scripts/verify-repository.mjs`.
 - **Governance State**: `TRACKERS/2026-07-20-tier-gates.json` is the machine-readable status for this order.
 - **CI State**: `.github/workflows/verify.yml` runs the hermetic test and verification commands on pushes to `main` and pull requests.
 

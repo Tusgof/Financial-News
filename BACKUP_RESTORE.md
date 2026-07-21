@@ -39,4 +39,4 @@ If a secret, PII, or Vault-class artifact was published, ordinary restore is ins
 
 | Date | Method | Result | Evidence |
 |:--|:--|:--|:--|
-| 2026-07-21 | Fresh clone from the Git remote; install, tests, and full verification | Pending NEWS-TG-1 close | `TRACKERS/2026-07-20-tier-gates.json` |
+| 2026-07-21 | Fresh clone from the Git remote; install, tests, and full verification | Passed at `3d0f360974f3ed351a174b97d81e926df6a7e44f` | `TRACKERS/2026-07-20-tier-gates.json` |
