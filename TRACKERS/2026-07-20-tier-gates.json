@@ -16,15 +16,18 @@
     },
     {
       "id": "NEWS-TG-1",
-      "status": "not_started",
+      "status": "in_progress",
       "required_artifacts": [
         {"path": "PROJECT_BRAIN.md", "must": "exist"},
         {"path": "AGENTS.md", "must": "exist"},
         {"path": ".github/workflows/verify.yml", "must": "exist"}
       ],
       "user_actions_pending": [],
-      "evidence": [],
-      "updated": "2026-07-20"
+      "evidence": [
+        "Local npm test passed",
+        "Local npm run verify passed with 132 tracked files and 39 reachable commits"
+      ],
+      "updated": "2026-07-21"
     }
   ]
 }
