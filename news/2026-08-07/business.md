@@ -1,0 +1,1 @@
+$(cat /tmp/claude-0/-home-user-Financial-News/2f72f68b-f002-57a7-a1ca-641a3fbbfe1c/scratchpad/business.md)
