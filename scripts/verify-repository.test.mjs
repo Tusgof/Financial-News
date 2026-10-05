@@ -32,6 +32,29 @@ try {
   const valid = run();
   if (valid.status !== 0) throw new Error(`valid fixture rejected\n${valid.stderr}`);
 
+  const shortCategory = category("business").replace(/\n\n### 3\) Item\n\n> \*\*Source:\*\* \[Publisher\]\(https:\/\/example\.com\/business\/th-3\)/, "");
+  write("news/2026-07-21/business.md", shortCategory);
+  const shortDay = run();
+  if (shortDay.status === 0 || !shortDay.stderr.includes("requires at least six numbered news items (found 5)")) {
+    throw new Error("verifier accepted a five-item category file");
+  }
+  const exception = (observed) => JSON.stringify({ exceptions: [{ rule: "min-items", file: "news/2026-07-21/business.md", observed_items: observed, decided_on: "2026-10-05", reason: "fixture" }] });
+  write("PUBLICATION_EXCEPTIONS.json", exception(5));
+  const excepted = run();
+  if (excepted.status !== 0) throw new Error(`verifier rejected a pinned exception\n${excepted.stderr}`);
+  write("PUBLICATION_EXCEPTIONS.json", exception(4));
+  const mismatched = run();
+  if (mismatched.status === 0 || !mismatched.stderr.includes("stale exception")) {
+    throw new Error("verifier accepted an exception whose pinned item count no longer matches");
+  }
+  write("news/2026-07-21/business.md", category("business"));
+  write("PUBLICATION_EXCEPTIONS.json", exception(5));
+  const stale = run();
+  if (stale.status === 0 || !stale.stderr.includes("stale exception")) {
+    throw new Error("verifier accepted a stale exception");
+  }
+  fs.rmSync(path.join(temp, "PUBLICATION_EXCEPTIONS.json"));
+
   write("AGENTS.md", "corrupted stop rule\n");
   const stopRuleMismatch = run();
   if (stopRuleMismatch.status === 0 || !stopRuleMismatch.stderr.includes("not verbatim UTF-8")) {

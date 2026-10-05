@@ -1,0 +1,26 @@
+{
+  "description": "Recorded exceptions to publication gates. Owner decision 2026-10-05 (Kit v4 pilot, K-003): fix or redesign a red gate instead of ignoring it. Entries pin the observed item count.",
+  "exceptions": [
+    {
+      "rule": "min-items",
+      "file": "news/2026-07-31/economy.md",
+      "observed_items": 5,
+      "decided_on": "2026-10-05",
+      "reason": "Published with five items before the gate was enforced at publication time. Published news is not rewritten or padded after the fact; the six-item rule stays in force for every other date."
+    },
+    {
+      "rule": "min-items",
+      "file": "news/2026-07-31/politics.md",
+      "observed_items": 5,
+      "decided_on": "2026-10-05",
+      "reason": "Published with five items before the gate was enforced at publication time. Published news is not rewritten or padded after the fact; the six-item rule stays in force for every other date."
+    },
+    {
+      "rule": "min-items",
+      "file": "news/2026-08-19/business.md",
+      "observed_items": 5,
+      "decided_on": "2026-10-05",
+      "reason": "Published with five items before the gate was enforced at publication time. Published news is not rewritten or padded after the fact; the six-item rule stays in force for every other date."
+    }
+  ]
+}
