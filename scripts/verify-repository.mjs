@@ -21,6 +21,29 @@ for (const controlDoc of ["AGENTS.md", "PROJECT_BRAIN.md"]) {
   }
 }
 
+// Recorded exceptions for already-published days. Each entry pins the observed item count, so an
+// exception stops matching (and is reported as stale) as soon as the file changes.
+const exceptionsFile = "PUBLICATION_EXCEPTIONS.json";
+const minItemExceptions = new Map();
+const usedExceptions = new Set();
+if (fs.existsSync(path.join(root, exceptionsFile))) {
+  try {
+    const entries = JSON.parse(fs.readFileSync(path.join(root, exceptionsFile), "utf8")).exceptions ?? [];
+    for (const entry of entries) {
+      const complete = entry && entry.rule === "min-items" && typeof entry.file === "string"
+        && Number.isInteger(entry.observed_items) && /^\d{4}-\d{2}-\d{2}$/.test(entry.decided_on ?? "")
+        && typeof entry.reason === "string" && entry.reason.trim();
+      if (!complete) {
+        addFinding(exceptionsFile, `incomplete exception entry ${JSON.stringify(entry)}; need rule, file, observed_items, decided_on, reason`);
+        continue;
+      }
+      minItemExceptions.set(entry.file, entry);
+    }
+  } catch (error) {
+    addFinding(exceptionsFile, `invalid JSON (${error.message})`);
+  }
+}
+
 const manifestPath = path.join(root, "news", "manifest.json");
 if (!fs.existsSync(manifestPath)) {
   addFinding("news/manifest.json", "missing manifest");
@@ -65,7 +88,14 @@ if (!fs.existsSync(manifestPath)) {
         const itemCount = (content.match(/^###\s+\d+\)\s+/gm) ?? []).length;
         const sourceUrls = [...content.matchAll(/\]\((https?:\/\/[^\s)]+)\)/g)].map((match) => match[1]);
         if (regionCount < 2) addFinding(relative, "requires global and Thailand sections");
-        if (itemCount < 6) addFinding(relative, "requires at least six numbered news items");
+        const exception = minItemExceptions.get(relative);
+        if (itemCount < 6) {
+          if (exception && exception.observed_items === itemCount) {
+            usedExceptions.add(relative);
+          } else {
+            addFinding(relative, `requires at least six numbered news items (found ${itemCount}); fix the file before publishing`);
+          }
+        }
         if (sourceUrls.length < itemCount) addFinding(relative, "each news item requires an HTTP(S) source link");
         for (const url of sourceUrls) {
           try {
@@ -206,6 +236,10 @@ for (const entry of historyObjects) {
   if (historyEmails.some((value) => !/@(?:example\.(?:com|org|net)|example\.invalid)$/i.test(value))) {
     addFinding(label, "reachable-history email/PII candidate");
   }
+}
+
+for (const file of minItemExceptions.keys()) {
+  if (!usedExceptions.has(file)) addFinding(exceptionsFile, `stale exception for ${file}; remove it`);
 }
 
 if (findings.length) {
